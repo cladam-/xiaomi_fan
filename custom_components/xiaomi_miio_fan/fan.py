@@ -38,6 +38,7 @@ from miio import (  # pylint: disable=import-error
     Device,
     DeviceException,
     Fan,
+    FanZA5,
     Fan1C,
     FanLeshow,
     FanP5,
@@ -191,7 +192,16 @@ AVAILABLE_ATTRIBUTES_FAN_1C = {
     ATTR_CHILD_LOCK: "child_lock",
 }
 
-AVAILABLE_ATTRIBUTES_FAN_ZA5 = AVAILABLE_ATTRIBUTES_FAN_1C
+AVAILABLE_ATTRIBUTES_FAN_ZA5  = {
+    ATTR_MODE: "mode",
+    ATTR_RAW_SPEED: "speed",
+    ATTR_ANGLE: "angle",
+    ATTR_BUZZER: "buzzer",
+    ATTR_OSCILLATE: "oscillate",
+    ATTR_DELAY_OFF_COUNTDOWN: "delay_off_countdown",
+    ATTR_LED: "led",
+    ATTR_CHILD_LOCK: "child_lock",
+}
 
 FAN_SPEED_LEVEL1 = "Level 1"
 FAN_SPEED_LEVEL2 = "Level 2"
@@ -232,9 +242,16 @@ FAN_PRESET_MODES_1C = {
 FAN_SPEEDS_1C = list(FAN_PRESET_MODES_1C)
 FAN_SPEEDS_1C.remove(SPEED_OFF)
 
-# FIXME: Add speed level 4
-FAN_PRESET_MODES_ZA5 = FAN_PRESET_MODES_1C
-FAN_SPEEDS_ZA5 = FAN_SPEEDS_1C
+FAN_PRESET_MODES_ZA5 = {
+    SPEED_OFF: 0,
+    FAN_SPEED_LEVEL1: 1,
+    FAN_SPEED_LEVEL2: 2,
+    FAN_SPEED_LEVEL3: 3,
+    FAN_SPEED_LEVEL4: 4,
+}
+
+FAN_SPEEDS_ZA5 = list(FAN_PRESET_MODES_ZA5)
+FAN_SPEEDS_ZA5.remove(SPEED_OFF)
 
 SUCCESS = ["ok"]
 
@@ -391,8 +408,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             name, fan, model, unique_id, retries, preset_modes_override
         )
     elif model == MODEL_FAN_ZA5:
-        fan = Fan1C(host, token, model=model)
-        device = XiaomiFanZA5(
+        fan = FanZA5(host, token, model=model)
+        device = XiaomiFanMiot(
             name, fan, model, unique_id, retries, preset_modes_override
         )
     else:
@@ -1255,23 +1272,4 @@ class XiaomiFan1C(XiaomiFan):
             "Setting fan natural mode of the miio device failed.",
             self._device.set_mode,
             FanOperationModeMiot.Normal,
-        )
-
-
-class XiaomiFanZA5(XiaomiFan1C):
-    """Representation of a Xiaomi Fan ZA5."""
-
-    def __init__(self, name, device, model, unique_id, retries, preset_modes_override):
-        """Initialize the fan entity."""
-        super().__init__(name, device, model, unique_id, retries, preset_modes_override)
-
-        self._device_features = FEATURE_FLAGS_FAN_ZA5
-        self._available_attributes = AVAILABLE_ATTRIBUTES_FAN_ZA5
-        self._preset_modes = list(FAN_PRESET_MODES_ZA5)
-        if preset_modes_override is not None:
-            self._preset_modes = preset_modes_override
-        self._oscillate = None
-
-        self._state_attrs.update(
-            {attribute: None for attribute in self._available_attributes}
         )
